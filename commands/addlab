@@ -1,0 +1,70 @@
+#!/bin/bash
+
+if [ "$USER" != "root" ]; then
+    echo "root priveleges are required"
+    exit 0
+fi
+
+# labname suele ser un nombre como "marcos" o "jueves2"
+if [ $# -lt 2 ]; then
+    echo "
+        Usage: 
+            addlab <labname> <language:php|python>
+    "
+    echo "
+        Example:
+            addlab mylab php
+    "
+    exit 0
+fi
+
+# Crear un nuevo usuario
+fecha=`date`
+clave=`php -r "echo substr(md5('$fecha'), 5, 10);"`
+
+echo "Agregando usuario........................"
+echo "
+     *****  CLAVE PARA EL USUARIO   *****
+               _-$clave-_
+     "
+adduser $1
+
+# Agrega un host virtual usuando vhostadd
+echo "Agregando vhost.........................."
+vhostadd -s $1.laeci.org -l $2
+
+# Cambia el propietario del directorio Web creado por el nuevo usuario
+# ya que vhostadd lo crea todo como root
+echo "Agregando permisos al directorio vhost..."
+chown -R $1:$1 /srv/websites/$1.laeci.org
+
+# Crea una DB para el usuario llamada db_<labname>
+# crea además un usuario para esa DB
+user="CREATE USER '$1'@'localhost' IDENTIFIED BY '_$1_';"
+db="CREATE DATABASE db_$1;"
+grant="GRANT ALL PRIVILEGES ON db_$1.* TO '$1'@'localhost';"
+echo "Creando Database........................."
+echo "Creando usuario MySQL...................."
+echo "Asignando permisos al usuario MySQL......"
+mysql -u root -pmysqlroot -e "$user $db $grant"
+
+# Crea un archivo README en la home del nuevo usuario, con todos sus datos
+echo "
+    Datos de acceso al Sistema:
+   ======================================
+        Usuario:    $1
+        Clave:      _-$clave-_
+
+    Datos de acceso a la base de datos:
+   =====================================
+        DB Name:    db_$1
+        DB User:    $1
+        DB Pass:    _$1_
+        DB Host:    localhost
+
+    Datos de acceso Web
+   ======================================
+        Dominio:    $1.laeci.org
+" > /home/$1/README
+
+cat /home/$1/README

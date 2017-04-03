@@ -1,0 +1,17 @@
+#!/bin/bash
+
+userdel -r $1               # elimina el usuario pasado por parámetro
+a2dissite $1.conf           # deshabilita el sitio web de ese usuario
+service apache2 restart     # reinicia apache
+
+# elimina el directorio web del usuario
+rm -rf /srv/websites/$1.laeci.org
+
+# FIXME ¿elimina la jaula del usuario?
+rm -rf /home/jail/home/$1/
+
+# elimina el usuario de MySQL
+mysql -u root -pmysqlroot -e "DELETE FROM mysql.user WHERE user = '$1';"
+
+# elimina la DB del usuario
+mysql -u root -pmysqlroot -e "DROP DATABASE db_$1;"
