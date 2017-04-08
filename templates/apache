@@ -1,4 +1,4 @@
-LockFile ${APACHE_LOCK_DIR}/accept.lock
+Mutex file:${APACHE_LOCK_DIR} default
 PidFile ${APACHE_PID_FILE}
 Timeout 30
 KeepAlive On
@@ -37,13 +37,21 @@ User ${APACHE_RUN_USER}
 Group ${APACHE_RUN_GROUP}
 AccessFileName .htaccess
 <Files ~ "^\.ht">
-    Order allow,deny
-    Deny from all
-    Satisfy all
+    #Order allow,deny
+    #Deny from all
+    #Satisfy all
+    Require all denied
 </Files>
+
+<Directory /var/www/html>
+    Options -Indexes
+</Directory>
 
 <Directory /> 
     Options -Indexes 
+    #Options None
+    #Order deny,allow
+    #Deny from all
 </Directory>
 
 DefaultType "text/html"
@@ -66,14 +74,14 @@ LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combine
 LogFormat "%h %l %u %t \"%r\" %>s %O" common
 LogFormat "%{Referer}i -> %U" referer
 
-<IfModule security2_module>
-    Include /etc/modsecurity/*.conf
-    Include /etc/modsecurity/base_rules/*.conf
-</IfModule>
+#<IfModule security2_module>
+#    Include /etc/modsecurity/*.conf
+#    Include /etc/modsecurity/base_rules/*.conf
+#</IfModule>
 
 LogFormat "%{User-agent}i" agent
 
-Include conf.d/
+#Include conf.d/
 Include sites-enabled/
 
 ServerSignature Off

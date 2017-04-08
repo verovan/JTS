@@ -1,9 +1,11 @@
 [DEFAULT]
 
 ignoreip = 127.0.0.1/8
-bantime  = 3600
-maxretry = 2
-backend = auto
+bantime  = 43200
+findtime = 3600
+maxretry = 3
+backend = polling
+usedns = warn
 destemail = MAILTO
 banaction = iptables-multiport
 mta = sendmail

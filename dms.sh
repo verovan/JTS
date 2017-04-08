@@ -1,7 +1,7 @@
 #!/bin/bash
 #===============================================================================
-#    JackTheStripper v 2.6.2
-#    Official Version for deploy a Debian GNU/Linux server, version 7 (or more)
+#    JackTheStripper v 2.7
+#    Official Version for deploy a Debian GNU/Linux server, version 8 (or more)
 
 #    Developed by Eugenia Bahit <eugenia@linux.com>
 #    
@@ -178,8 +178,8 @@ function install_modsecurity() {
     write_title "13. Instalar ModSecurity"
     apt-get install libxml2 libxml2-dev libxml2-utils -y
     apt-get install libaprutil1 libaprutil1-dev -y
-    apt-get install libapache-mod-security -y
-
+    apt-get install libapache2-mod-security2 -y
+    cp templates/mod-security /etc/apache2/mods-available/security2.conf
     say_done
 }
 
@@ -190,19 +190,19 @@ function install_owasp_core_rule_set() {
 
     echo -n " descargar........................................................ "
     uri_part1='http://pkgs.fedoraproject.org/repo/pkgs/mod_security_crs/'
-    uri_part2='modsecurity-crs_2.2.5.tar.gz'
-    uri_part3='aaeaa1124e8efc39eeb064fb47cfc0aa/modsecurity-crs_2.2.5.tar.gz'
+    uri_part2='owasp-modsecurity-crs-f16e0b1.tar.gz'
+    uri_part3='0543475c6c150b4dfe9864999a10acd2/owasp-modsecurity-crs-f16e0b1.tar.gz'
     wget $uri_part1/$uri_part2/$uri_part3; echo "OK"
 
     echo -n " desempaquetar.................................................... "
-    tar -xzf modsecurity-crs_2.2.5.tar.gz; echo "OK"
+    tar -xzf owasp-modsecurity-crs-f16e0b1.tar.gz; echo "OK"
 
     echo -n " mover............................................................ "
-    cp -R modsecurity-crs_2.2.5/* /etc/modsecurity/; echo "OK"
+    cp -R owasp-modsecurity-crs-f16e0b1726c843889b9f024e27fd794147594677/* /etc/modsecurity/; echo "OK"
 
     echo -n " eliminar archivos temporales..................................... "
-    rm modsecurity-crs_2.2.5.tar.gz
-    rm -R modsecurity-crs_2.2.5; echo "OK"
+    rm owasp-modsecurity-crs-f16e0b1.tar.gz
+    rm -R owasp-modsecurity-crs-f16e0b1726c843889b9f024e27fd794147594677; echo "OK"
 
     echo -n " configurar....................................................... "
     from_path="/etc/modsecurity/modsecurity_crs_10_setup.conf.example"
@@ -235,6 +235,7 @@ function install_owasp_core_rule_set() {
     echo "Header set X-Powered-By \"$poweredby\"" >> $modseccrs10su
 
     a2enmod headers
+    a2enmod security2
     service apache2 restart
     say_done
 }
@@ -258,7 +259,7 @@ function install_modevasive() {
     chown www-data:www-data /var/log/mod_evasive/
     modevasive="/etc/apache2/mods-available/mod-evasive.conf"
     sed s/MAILTO/$inbox/g templates/mod-evasive > $modevasive
-    a2enmod mod-evasive
+    a2enmod evasive
     service apache2 restart
     say_done
 }
@@ -269,6 +270,7 @@ function config_fail2ban() {
     write_title "17. Finalizar configuración de fail2ban"
     sed s/MAILTO/$inbox/g templates/fail2ban > /etc/fail2ban/jail.local
     cp /etc/fail2ban/jail.local /etc/fail2ban/jail.conf
+    cp templates/iptables-blocktype /etc/fail2ban/action.d/iptables-blocktype.conf
     /etc/init.d/fail2ban restart
     say_done
 }
@@ -283,11 +285,12 @@ function install_aditional_packages() {
     echo "18.4. Instalar WSGI............."; apt-get install libapache2-mod-wsgi -y
     echo "18.5. Instalar PIP.............."; apt-get install python-pip -y
     echo "18.6. Instalar Vim.............."; apt-get install vim -y
+    echo "18.6. Instalar GNU/Screen......."; apt-get install screen -y
     echo "18.7. Instalar PHPUnit..........";
     
-    wget https://phar.phpunit.de/phpunit.phar
-    chmod +x phpunit.phar
-    mv phpunit.phar /usr/local/bin/phpunit
+    wget https://phar.phpunit.de/phpunit-5.6.3.phar
+    chmod +x phpunit-5.6.3.phar
+    mv phpunit-5.6.3.phar /usr/local/bin/phpunit
     resultado=`phpunit --version`
     echo "
     
@@ -309,24 +312,33 @@ function tunning_bashrc() {
 }
 
 
-# 20. Tunnear Vim
+# 20. Setear autologout para los usuarios
+function set_timeout() {
+    write_title "20. Setear 15 minutos de antes del autologout de los usuarios"
+    echo -e "TMOUT=900" >> /etc/bash.bashrc
+    echo -e "readonly TMOUT" >> /etc/bash.bashrc
+    say_done
+}
+
+
+# 21. Tunnear Vim
 function tunning_vim() {
-    write_title "20. Tunnear Vim"
+    write_title "21. Tunnear Vim"
     cp templates/vimrc /etc/skel/.vimrc
     tunning vimrc
 }
 
 
-# 21. Tunnear Nano
+# 22. Tunnear Nano
 function tunning_nano() {
-    write_title "21. Tunnear Nano"
+    write_title "22. Tunnear Nano"
     tunning nanorc
 }
 
 
-# 22. Agregar tarea de actualización diaria
+# 23. Agregar tarea de actualización diaria
 function add_updating_task() {
-    write_title "22. Agregar tarea de actualización diaria al Cron"
+    write_title "23. Agregar tarea de actualización diaria al Cron"
     tarea="@daily apt-get update; apt-get dist-upgrade -y"
     crontab -l > tareas
     echo $tarea >> tareas
@@ -336,9 +348,9 @@ function add_updating_task() {
 }
 
 
-# 23. Agregar comandos personalizados
+# 24. Agregar comandos personalizados
 function add_commands() {
-    write_title "23. Agregar comandos personalizados"
+    write_title "24. Agregar comandos personalizados"
     add_command_blockip     # Agregar regla bloqueo a iptables
     add_command_vhostadd    # Agregar nuevo VirtualHost
     add_command_europio     # Instalar o actualizar Europio Engine
@@ -347,9 +359,9 @@ function add_commands() {
 }
 
 
-# 24. Instalar PortSentry
+# 25. Instalar PortSentry
 function install_portsentry() {
-    write_title "24. Instalar y configurar el antiscan de puertos PortSentry"
+    write_title "25. Instalar y configurar el antiscan de puertos PortSentry"
     apt-get install portsentry -y
     mv /etc/portsentry/portsentry.conf /etc/portsentry/portsentry.conf-original
     cp templates/portsentry /etc/portsentry/portsentry.conf
@@ -360,16 +372,63 @@ function install_portsentry() {
 }
 
 
-# 25. Asegurar Kernel contra ataques de red
+# 26. Instalar herramienats de auditoría
+function install_audit_tools() {
+    write_title "26. Instalar Lynis, tcpdump"
+    apt-get install lynis -y
+    apt-get install tcpdump -y
+    say_done
+}
+
+
+# 27. Instalar herramienats de performance
+function install_performance_tools() {
+    write_title "27. Instalar iptraf-ng, iftop"
+    apt-get install iptraf-ng -y
+    apt-get install iftop -y
+    say_done
+}
+
+# 28. Asegurar Kernel contra ataques de red
 function kernel_config() {
-    write_title "25. Asegurar Kernel contra ataques de red"
+    write_title "28. Asegurar Kernel contra ataques de red"
     cp templates/sysctl /etc/sysctl.conf
     sysctl -e -p
     say_done
 }
 
+# 29. Cambiar MOTD
+function change_motd() {
+    write_title "29. Cambiar el MOTD"
+    local motd="\nEste sistema es para el uso exclusivo de usuarios autorizados, por lo que las personas que lo\n"
+    motd+="utilicen estarán sujetos al monitoreo de todas sus actividades en el mismo. Cualquier persona\n"
+    motd+="que utilice este sistema permite expresamente tal monitoreo y debe estar consciente de que si este\n"
+    motd+="revelara una posible actividad ilicita, el personal de sistemas proporcionara la evidencia\n"
+    motd+="del monitoreo al personal de seguridad, con el fin de emprender las acciones civiles y/o legales\n"
+    motd+="que correspondan.\n"
+    local motd_file="/etc/motd"
+    if [[ ! -a $motd_file ]]; then
+        touch $motd_file
+        chmod 644 $motd_file
+    fi
+    echo -e $motd > $motd_file
+    say_done
+}
 
-# 26. Instalar comando Newlab
+# 30. Cambiar /ets/issue
+function change_issue() {
+    write_title "30. Cambiar el mensaje de login"
+    local issue="$(uname -s)"
+    local issue_file="/etc/issue"
+    if [[ ! -a $issue_file ]]; then
+        touch $issue_file
+        chmod 644 $issue_file
+    fi
+    echo -e $issue > $issue_file
+    say_done
+}
+
+# 31. Instalar comando Newlab
 function add_command_newlab() {
     if [ "$optional_arg" == "--custom" ]; then 
         echo "***** Instalando NewLab by (C) Marcos Leal Sierra 2016 GPL v3.0 *****"
@@ -382,10 +441,9 @@ function add_command_newlab() {
     fi
 }
 
-
-# 27. Reiniciar servidor
+# 32. Reiniciar servidor
 function final_step() {
-    write_title "25. Finalizar deploy"
+    write_title ". Finalizar deploy"
     replace USERNAME $username SERVERIP $serverip < templates/texts/bye
     echo -n " ¿Ha podido conectarse por SHH como $username? (y/n) "
     read respuesta
@@ -396,9 +454,6 @@ function final_step() {
         echo "Bye."
     fi
 }
-
-
-
 
 
 set_pause_on                    #  Configurar modo de pausa entre funciones
@@ -423,12 +478,16 @@ install_modevasive              # 16. Instalar ModEvasive
 config_fail2ban                 # 17. Configurar fail2ban
 install_aditional_packages      # 18. Instalación de paquetes adicionales
 tunning_bashrc                  # 19. Tunnear el archivo .bashrc
-tunning_vim                     # 20. Tunnear Vim
-tunning_nano                    # 21. Tunnear Nano
-add_updating_task               # 22. Agregar tarea de actualización diaria
-add_commands                    # 23. Agregar comandos personalizados
-install_portsentry              # 24. Instalar PortSentry
-kernel_config                   # 25. Asegurar kernel contra ataques de red
-add_command_newlab              # 26. Instalar comando Newlab
-final_step                      # 27. Reiniciar servidor
-
+set_timeout                     # 20. Setear autologout para los usuarios
+tunning_vim                     # 21. Tunnear Vim
+tunning_nano                    # 22. Tunnear Nano
+add_updating_task               # 23. Agregar tarea de actualización diaria
+add_commands                    # 24. Agregar comandos personalizados
+install_portsentry              # 25. Instalar PortSentry
+install_audit_tools             # 26. Instalar herramientas de auditoria
+install_performance_tools       # 27. Instalar herramientas de performance
+kernel_config                   # 28. Asegurar kernel contra ataques de red
+change_motd                     # 29. Cambiar el MOTD
+change_issue                    # 30. Cambiar el /etc/issue
+add_command_newlab              # 31. Instalar comando Newlab
+final_step                      # 32. Reiniciar servidor

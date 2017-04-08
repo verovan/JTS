@@ -1,0 +1,4 @@
+[INCLUDES]
+after = iptables-blocktype.local
+[Init]
+blocktype = DROP

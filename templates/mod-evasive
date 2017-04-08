@@ -4,7 +4,7 @@
    DOSSiteCount 50
    DOSPageInterval 1
    DOSSiteInterval 1
-   DOSBlockingPeriod 60
+   DOSBlockingPeriod 300
    DOSLogDir /var/log/mod_evasive
    DOSEmailNotify MAILTO
    DOSWhitelist 127.0.0.1

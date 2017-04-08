@@ -4,7 +4,7 @@
     Este servidor debe ser reiniciado.
     Antes de continuar, abra una nueva terminal e intente acceder por SSH
     con el usuario USERNAME, ejecutando:
-    ssh -p 372 USERNAME@SERVERIP
+    ssh -p 2266 USERNAME@SERVERIP
     
     ***** SOLO SI HA PODIDO ACCEDER COMO EL USUARIO USERNAME RESPONDA "y" *****
     

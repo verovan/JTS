@@ -4,11 +4,15 @@
 -A INPUT -d 127.0.0.0/8 -j REJECT
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 -A OUTPUT -j ACCEPT
--A INPUT -p tcp --dport 80 -j ACCEPT
--A INPUT -p tcp --dport 443 -j ACCEPT
--A INPUT -p tcp -m state --state NEW --dport 372 -j ACCEPT
--A INPUT -p icmp -j ACCEPT
+-A INPUT -p tcp --dport 80 -m state --state NEW,ESTABLISHED -m comment --comment "Conexiones Apache" -j ACCEPT
+-A INPUT -p tcp --dport 443 -m state --state NEW,ESTABLISHED -m comment --comment "Conexiones Apache" -j ACCEPT
+-A INPUT -p tcp --dport 2266 -m state --state NEW,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp -m icmp --icmp-type 8 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -m limit --limit 5/min -j LOG --log-prefix "iptables denied: " --log-level 7
+-A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j DROP
+-A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j DROP
+-A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+-A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN -j DROP
 -A INPUT -j DROP
 -A FORWARD -j DROP
 
